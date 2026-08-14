@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Đăng nhập Google</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <!-- Thêm thư viện Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
@@ -20,15 +19,10 @@
   <div id="userInfo"></div>
 
   <script>
-    // 1. Cấu hình Firebase Realtime Database
     var firebaseConfig = {
       databaseURL: "https://messager-65f58-default-rtdb.firebaseio.com/"
     };
     firebase.initializeApp(firebaseConfig);
-
-    // 2. Lấy session ID từ URL do HTA gửi sang
-    var urlParams = new URLSearchParams(window.location.search);
-    var sessionId = urlParams.get('session');
 
     function parseJwt(token) {
       const base64Url = token.split('.')[1];
@@ -44,21 +38,18 @@
       
       document.getElementById('userInfo').innerHTML = `
         <p><strong>Xin chào:</strong> ${data.name}</p>
-        <p><strong>Email:</strong> ${data.email}</p>
-        <p style="color:#45bd62; font-size:13px;">Đăng nhập thành công! Đang quay lại HTA...</p>
+        <p style="color:#45bd62; font-size:13px;">Đăng nhập thành công! Bạn có thể đóng trang này.</p>
       `;
 
-      // 3. Đẩy thông tin người dùng lên Firebase
-      if (sessionId) {
-        firebase.database().ref("active_sessions/" + sessionId).set({
-          uid: data.sub, // ID duy nhất từ Google
-          name: data.name,
-          email: data.email,
-          picture: data.picture
-        }).then(function() {
-          setTimeout(function() { window.close(); }, 1200);
-        });
-      }
+      // Đẩy dữ liệu trực tiếp vào nút 'latest_login' trên Firebase
+      firebase.database().ref("latest_login").set({
+        uid: data.sub,
+        name: data.name,
+        email: data.email,
+        time: new Date().getTime()
+      }).then(function() {
+        setTimeout(function() { window.close(); }, 1500);
+      });
     }
 
     window.onload = function () {
@@ -71,8 +62,6 @@
         document.getElementById("buttonDiv"),
         { theme: "outline", size: "large", text: "signin_with" } 
       );
-
-      google.accounts.id.prompt();
     }
   </script>
 </body>
