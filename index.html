@@ -5,17 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Đăng nhập Google</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- Thêm thư viện Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #18191a; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    #userInfo { margin-top: 20px; text-align: center; }
+  </style>
 </head>
 <body>
-  <h2>Trang Đăng Nhập</h2>
+  <h2>Đăng nhập Messenger HTA</h2>
   
-  <!-- Nút đăng nhập Google -->
   <div id="buttonDiv"></div>
-
-  <!-- Nơi hiển thị thông tin sau khi đăng nhập -->
-  <div id="userInfo" style="margin-top: 20px;"></div>
+  <div id="userInfo"></div>
 
   <script>
+    // 1. Cấu hình Firebase Realtime Database
+    var firebaseConfig = {
+      databaseURL: "https://messager-65f58-default-rtdb.firebaseio.com/"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    // 2. Lấy session ID từ URL do HTA gửi sang
+    var urlParams = new URLSearchParams(window.location.search);
+    var sessionId = urlParams.get('session');
+
     function parseJwt(token) {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -30,11 +44,21 @@
       
       document.getElementById('userInfo').innerHTML = `
         <p><strong>Xin chào:</strong> ${data.name}</p>
-
         <p><strong>Email:</strong> ${data.email}</p>
-
-        <img src="${data.picture}" alt="Avatar" style="border-radius: 50%; width: 80px;">
+        <p style="color:#45bd62; font-size:13px;">Đăng nhập thành công! Đang quay lại HTA...</p>
       `;
+
+      // 3. Đẩy thông tin người dùng lên Firebase
+      if (sessionId) {
+        firebase.database().ref("active_sessions/" + sessionId).set({
+          uid: data.sub, // ID duy nhất từ Google
+          name: data.name,
+          email: data.email,
+          picture: data.picture
+        }).then(function() {
+          setTimeout(function() { window.close(); }, 1200);
+        });
+      }
     }
 
     window.onload = function () {
